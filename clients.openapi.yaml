@@ -61,8 +61,8 @@ paths:
                 $ref: '#/components/schemas/ServerError'
           description: Error
       summary: Поучение списка клиентов
-    put:
-      operationId: clientsCreat
+    post:
+      operationId: clientsCreate
       requestBody:
         content:
           application/json:
@@ -70,11 +70,7 @@ paths:
               $ref: '#/components/schemas/Client'
         description: Модель клиента
       responses:
-        200:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Client'
+        201:
           description: Клиент успешно создан
         default:
           content:
@@ -97,7 +93,7 @@ paths:
           type: string
         style: simple
       responses:
-        200:
+        204:
           description: Данные клиента успешно удалены
         default:
           content:
@@ -150,11 +146,7 @@ paths:
               $ref: '#/components/schemas/Client'
         description: Изменённая модель клиента, либо часть полей
       responses:
-        200:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Client'
+        204:
           description: Данные успешно обновлены
         default:
           content:
@@ -324,7 +316,7 @@ components:
           type: string
         spouse:
           description: Супруг/супруга, такая-же модель как и у Клиента. Просто сваггер
-            не поддерживает сука рекурсивные ссыли и не даёт удалить свойство
+            не поддерживает рекурсивные ссыли и не даёт удалить свойство
           type: object
         children:
           description: Дети клиента
@@ -405,7 +397,7 @@ components:
             type: string
           type: array
         documents:
-          description: массив идентификтаоров документов
+          description: массив идентификаторов документов
           items:
             description: Идентификатор документа
             format: uuid
