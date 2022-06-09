@@ -1,0 +1,724 @@
+openapi: 3.0.1
+info:
+  contact:
+    email: surrealistik@alt-point.com
+    name: SurRealistik
+    url: https://alt-point.com/
+  description: API для управления с клиентами
+  title: Clients api
+  version: 1.0.0
+servers:
+- url: https://localhost/
+paths:
+  /:
+    get:
+      description: Поучение списка клиентов
+      operationId: clientsList
+      parameters:
+      - description: строка для поиска
+        in: query
+        name: query
+        schema:
+          type: string
+      - description: поле, по которому будем сортировать
+        in: query
+        name: sortBy
+        schema:
+          default: createdAt
+          type: string
+      - description: направление сортировки
+        in: query
+        name: sortDir
+        schema:
+          default: desc
+          enum:
+          - asc
+          - desc
+          type: string
+      - description: номер текущей страницы для пагинации
+        in: query
+        name: page
+        schema:
+          default: 1
+          type: integer
+      - description: limit per page
+        in: query
+        name: limit
+        schema:
+          default: 10
+          type: number
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientsPagination'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+          description: Error
+      summary: Поучение списка клиентов
+    put:
+      operationId: clientsCreat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+        description: Модель клиента
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+          description: Клиент успешно создан
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Default'
+          description: Error
+      summary: Создание записи о клиенте
+  /{clientId}/:
+    delete:
+      description: Удаление данных клиента
+      operationId: cliensRemove
+      parameters:
+      - explode: false
+        in: path
+        name: clientId
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        200:
+          description: Данные клиента успешно удалены
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+          description: Error
+      summary: Удаление данных клиента
+    get:
+      description: Чтение данных клиента
+      operationId: clientsRead
+      parameters:
+      - explode: false
+        in: path
+        name: clientId
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+          description: Клиент найден
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+          description: Error
+      summary: Чтение данных клиента
+    patch:
+      operationId: clientsUpdate
+      parameters:
+      - explode: false
+        in: path
+        name: clientId
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+        description: Изменённая модель клиента, либо часть полей
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+          description: Данные успешно обновлены
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Default'
+          description: Error
+      summary: Обновление данных клиента
+components:
+  parameters:
+    clientId:
+      explode: false
+      in: path
+      name: clientId
+      required: true
+      schema:
+        format: uuid
+        type: string
+      style: simple
+  schemas:
+    ClientsPagination:
+      allOf:
+      - $ref: '#/components/schemas/PaginationResponseModel'
+      - $ref: '#/components/schemas/ClientsPagination_allOf'
+    ServerError:
+      description: Модель ошибки
+      properties:
+        code:
+          default: 400
+          description: Числовой код ошибки. **Не обязательно** должен сотноситься
+            с кодами ответа сервера.
+          type: integer
+        key:
+          description: Ключ ошибки. Например `AUTH_PASSWORD_INCORRECT`. Желательно
+            что бы по ключу ошибки можно было понять в каком модуле, относительно
+            каких данных/операции произолшо исключение.
+          example: AUTH_PASSWORD_INCORRECT
+          type: string
+        message:
+          description: Текстовое описание ошибки
+          type: string
+      required:
+      - key
+      - message
+      type: object
+    Client:
+      description: Модель Клиента
+      example:
+        documents:
+        - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        typeEmp: employee
+        spouse: '{}'
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        communications:
+        - type: email
+          value: value
+        - type: email
+          value: value
+        passport:
+          number: 121 232
+          dateIssued: 0008-07-10T00:00:00.000+0000
+          birthPlace: birthPlace
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          series: "7474"
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          giver: ОУФМ Челябинской обл. по Центральному р-ну гор.Челябинска
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        monIncome: 5.637376656633329
+        children:
+        - patronymic: Михайлович
+          surname: Пупкин
+          dob: 2000-01-23
+          name: Вася
+        - patronymic: Михайлович
+          surname: Пупкин
+          dob: 2000-01-23
+          name: Вася
+        surname: surname
+        curFieldExp: 5.962133916683182
+        monExpenses: 2.3021358869347655
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        regAddress:
+          zipCode: "454084"
+          country: Russia
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          city: Саратов
+          street: ул. Пушкина
+          block: A
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          region: Саратовская область
+          house: "12"
+          apartment: 101a
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        updatedAt: 2000-01-23T04:56:07.000+00:00
+        generalExp: 6.027456183070403
+        jobs:
+        - address: '{}'
+          companyName: companyName
+          jobTitle: jobTitle
+          dateDismissal: 2000-01-23
+          type: main
+          phoneNumbers:
+          - +7 999 888 77 66
+          - +7 999 888 77 66
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          site: http://example.com/aeiou
+          monIncome: 0
+          tin: tin
+          fioManager: fioManager
+          dateEmp: 2000-01-23
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        - address: '{}'
+          companyName: companyName
+          jobTitle: jobTitle
+          dateDismissal: 2000-01-23
+          type: main
+          phoneNumbers:
+          - +7 999 888 77 66
+          - +7 999 888 77 66
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          site: http://example.com/aeiou
+          monIncome: 0
+          tin: tin
+          fioManager: fioManager
+          dateEmp: 2000-01-23
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        patronymic: patronymic
+        livingAddress:
+          zipCode: "454084"
+          country: Russia
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          city: Саратов
+          street: ул. Пушкина
+          block: A
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          region: Саратовская область
+          house: "12"
+          apartment: 101a
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        typeEducation: secondary
+        dob: 2000-01-23
+        name: name
+        files:
+        - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        - 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        maritalStatus: single
+        curWorkExp: 1.4658129805029452
+        status: lead
+      properties:
+        id:
+          description: Идентификатор клиента
+          format: uuid
+          type: string
+        name:
+          description: Имя
+          type: string
+        surname:
+          description: Фамилия
+          type: string
+        patronymic:
+          description: Отчество
+          type: string
+        dob:
+          description: День рождения
+          format: date
+          type: string
+        spouse:
+          description: Супруг/супруга, такая-же модель как и у Клиента. Просто сваггер
+            не поддерживает сука рекурсивные ссыли и не даёт удалить свойство
+          type: object
+        children:
+          description: Дети клиента
+          items:
+            $ref: '#/components/schemas/Child'
+          type: array
+        passport:
+          $ref: '#/components/schemas/DocumentPassport'
+        livingAddress:
+          $ref: '#/components/schemas/Address'
+        regAddress:
+          $ref: '#/components/schemas/Address'
+        jobs:
+          description: места работы
+          items:
+            $ref: '#/components/schemas/Job'
+          type: array
+        generalExp:
+          description: Основной стаж
+          type: number
+        curWorkExp:
+          description: На текущем месте работы стаж
+          type: number
+        curFieldExp:
+          description: В текущей сфере
+          type: number
+        status:
+          description: Статус
+          enum:
+          - lead
+          - potential
+          - notTarget
+          - consultation
+          - application
+          - deal
+          - transactionParticipant
+          - rejection
+          type: string
+        typeEducation:
+          description: Тип образования
+          enum:
+          - secondary
+          - secondarySpecial
+          - incompleteHigher
+          - higher
+          - twoOrMoreHigher
+          - academicDegree
+          type: string
+        maritalStatus:
+          description: Семейное положение
+          enum:
+          - single
+          - married
+          - widower/widow
+          - inDivorce
+          - civilMarriage
+          type: string
+        typeEmp:
+          description: Тип занятости
+          enum:
+          - employee
+          - iE
+          - owner/co-owner
+          - retiree
+          - unemployed
+          type: string
+        monIncome:
+          description: Суммарный доход в месяц
+          type: number
+        monExpenses:
+          description: Суммарный расход в месяц
+          type: number
+        files:
+          description: Массив с идентификаторами файлов
+          items:
+            description: Идентификатор файла
+            format: uuid
+            type: string
+          type: array
+        documents:
+          description: массив идентификтаоров документов
+          items:
+            description: Идентификатор документа
+            format: uuid
+            type: string
+          type: array
+        communications:
+          items:
+            $ref: '#/components/schemas/Client_communications'
+          type: array
+        createdAt:
+          description: дата создания записи
+          format: date-time
+          type: string
+        updatedAt:
+          description: дата обновления записи
+          format: date-time
+          type: string
+      type: object
+    Default:
+      description: |
+        Ошибка, может быть либо ошибка валиации модели, либо ошибка сервера/зависимостей.
+        Раличается тип message
+      oneOf:
+      - $ref: '#/components/schemas/ServerError'
+      - $ref: '#/components/schemas/ValidationError'
+      type: object
+    ValidationError:
+      description: Модель ошибки Валидации
+      properties:
+        code:
+          default: 400
+          description: Числовой код ошибки. **Не обязательно** должен сотноситься
+            с кодами ответа сервера.
+          type: integer
+        key:
+          description: Ключ ошибки. Например `AUTH_PASSWORD_INCORRECT`. Желательно
+            что бы по ключу ошибки можно было понять в каком модуле, относительно
+            каких данных/операции произолшо исключение.
+          example: AUTH_PASSWORD_INCORRECT
+          type: string
+        message:
+          description: |
+            Массив с объектами описывающими проблема в передаваемых данных
+          items:
+            $ref: '#/components/schemas/ValidationError_message'
+          type: array
+      required:
+      - key
+      - message
+      type: object
+    PaginationResponseModel:
+      description: Модель пагинации
+      properties:
+        total:
+          description: Количество результатов
+          type: integer
+        perPage:
+          description: Количество элементов на странице
+          type: integer
+        lastPage:
+          description: номер последней странциы
+          type: integer
+        page:
+          description: номер текущей страницы
+          type: integer
+        data:
+          description: Коллекция элементов
+          items:
+            type: object
+          type: array
+      type: object
+    Child:
+      description: Ребёнок
+      example:
+        patronymic: Михайлович
+        surname: Пупкин
+        dob: 2000-01-23
+        name: Вася
+      properties:
+        name:
+          description: имя
+          example: Вася
+          type: string
+        surname:
+          description: Фамилия
+          example: Пупкин
+          type: string
+        patronymic:
+          description: Отчество
+          example: Михайлович
+          type: string
+        dob:
+          description: День рождения
+          format: date
+          type: string
+      type: object
+    DocumentPassport:
+      description: Модель документа Паспорт
+      example:
+        number: 121 232
+        dateIssued: 0008-07-10T00:00:00.000+0000
+        birthPlace: birthPlace
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        series: "7474"
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        giver: ОУФМ Челябинской обл. по Центральному р-ну гор.Челябинска
+        updatedAt: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          format: uuid
+          type: string
+        series:
+          description: Серия паспорт
+          example: "7474"
+          type: string
+        number:
+          description: Номер паспорт
+          example: 121 232
+          type: string
+        giver:
+          description: Кем выдан паспорт
+          example: ОУФМ Челябинской обл. по Центральному р-ну гор.Челябинска
+          type: string
+        dateIssued:
+          description: Дата выдачи паспорта
+          example: 0008-07-10
+          format: date
+          type: string
+        birthPlace:
+          description: Место рождения
+          type: string
+        createdAt:
+          description: дата создания записи
+          format: date-time
+          type: string
+        updatedAt:
+          description: дата обновления записи
+          format: date-time
+          type: string
+      type: object
+    Address:
+      description: Адрес
+      example:
+        zipCode: "454084"
+        country: Russia
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        city: Саратов
+        street: ул. Пушкина
+        block: A
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        region: Саратовская область
+        house: "12"
+        apartment: 101a
+        updatedAt: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          description: Идентификатор адреса
+          format: uuid
+          type: string
+        zipCode:
+          description: Почтовый индекс
+          example: "454084"
+          type: string
+        country:
+          description: Название страны
+          example: Russia
+          type: string
+        region:
+          description: Регион, область
+          example: Саратовская область
+          type: string
+        city:
+          description: Город
+          example: Саратов
+          type: string
+        street:
+          description: Улица
+          example: ул. Пушкина
+          type: string
+        house:
+          description: Номер дома
+          example: "12"
+          type: string
+        block:
+          description: Блок, литер
+          example: A
+          type: string
+        apartment:
+          description: Номер квартиры, офиса и т.д.
+          example: 101a
+          type: string
+        createdAt:
+          description: дата создания записи
+          format: date-time
+          type: string
+        updatedAt:
+          description: дата обновления записи
+          format: date-time
+          type: string
+      required:
+      - city
+      - country
+      - house
+      - region
+      - street
+      type: object
+    Job:
+      description: Место работы
+      example:
+        address: '{}'
+        companyName: companyName
+        jobTitle: jobTitle
+        dateDismissal: 2000-01-23
+        type: main
+        phoneNumbers:
+        - +7 999 888 77 66
+        - +7 999 888 77 66
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        site: http://example.com/aeiou
+        monIncome: 0
+        tin: tin
+        fioManager: fioManager
+        dateEmp: 2000-01-23
+        updatedAt: 2000-01-23T04:56:07.000+00:00
+      properties:
+        companyName:
+          description: Название места работы
+          type: string
+        type:
+          enum:
+          - main
+          - pluralistically
+          - owner / participant
+          type: string
+        dateEmp:
+          description: Дата трудоустройства
+          format: date
+          type: string
+        dateDismissal:
+          description: Дата увольнения
+          format: date
+          type: string
+        tin:
+          description: ИНН
+          type: string
+        address:
+          description: Адрес
+          type: object
+        jobTitle:
+          description: Должность
+          type: string
+        monIncome:
+          description: Уровень дохода в месяц
+          type: integer
+        fioManager:
+          description: ФИО руководителя или иного лица, которое может подтвердить
+          type: string
+        site:
+          description: Сайт организации
+          format: url
+          type: string
+        phoneNumbers:
+          items:
+            description: Номер телефона
+            example: +7 999 888 77 66
+            type: string
+          type: array
+        createdAt:
+          description: дата создания записи
+          format: date-time
+          type: string
+        updatedAt:
+          description: дата обновления записи
+          format: date-time
+          type: string
+      type: object
+    createdAt:
+      description: дата создания записи
+      format: date-time
+      type: string
+    updatedAt:
+      description: дата обновления записи
+      format: date-time
+      type: string
+    ClientsPagination_allOf:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/Client'
+          type: array
+    Client_communications:
+      description: Средство связиклиента
+      example:
+        type: email
+        value: value
+      properties:
+        type:
+          enum:
+          - email
+          - phone
+          type: string
+        value:
+          description: Значеие средства связи
+          type: string
+    ValidationError_message:
+      properties:
+        field:
+          description: название поля модели
+          type: string
+        message:
+          description: Описание проблемы
+          type: string
+        validation:
+          description: название правила валидации
+          example: required
+          type: string
