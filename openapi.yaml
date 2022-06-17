@@ -1,0 +1,684 @@
+openapi: 3.0.3
+info:
+    title: Сlients API
+    description: Тестовое задание Сlients API
+    version: 1.0.0
+    contact:
+        email: surrealistik@alt-point.com
+        name: SurRealistik
+        url: https://alt-point.com/
+servers:
+    - url: https://localhost:3000/
+paths:
+    /clients/:
+        get:
+            description: Листинг клиентов
+            summary: Листинг клиентов
+            operationId: clientList
+            tags: [clients]
+            parameters:
+                - $ref: '#/components/parameters/sortBy'
+                - $ref: '#/components/parameters/sortDir'
+                - $ref: '#/components/parameters/limit'
+                - $ref: '#/components/parameters/page'
+                - $ref: '#/components/parameters/search'
+            responses:
+                200:
+                    $ref: '#/components/responses/ClientPaginationResponse'
+                422:
+                    $ref: '#/components/responses/ValidationErrorResponse'
+                5XX:
+                    $ref: '#/components/responses/ServerErrorResponse'
+        post:
+            description: Создание клиента
+            summary: Создание клиента
+            operationId: clientCreate
+            tags: [clients]
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ClientWithSpouse'
+            responses:
+                201:
+                    $ref: '#/components/responses/Created'
+                422:
+                    $ref: '#/components/responses/ValidationErrorResponse'
+                5XX:
+                    $ref: '#/components/responses/ServerErrorResponse'
+    /clients/{clientId}/:
+        get:
+            description: Просмотр клиента
+            summary: Просмотр клиента
+            operationId: clientGet
+            tags: [clients]
+            parameters:
+                - $ref: '#/components/parameters/clientId'
+            responses:
+                200:
+                    $ref: '#/components/schemas/ClientWithSpouse'
+                404:
+                    $ref: '#/components/responses/EntityNotFoundErrorResponse'
+                422:
+                    $ref: '#/components/responses/ValidationErrorResponse'
+                5XX:
+                    $ref: '#/components/responses/ServerErrorResponse'
+        patch:
+            description: Частичное обновление клиента
+            summary: Частичное обновление клиента
+            operationId: clientUpdate
+            tags: [clients]
+            parameters:
+                - $ref: '#/components/parameters/clientId'
+            responses:
+                204:
+                    description: Данные клиента успешо обновленны
+                404:
+                    $ref: '#/components/responses/EntityNotFoundErrorResponse'
+                422:
+                    $ref: '#/components/responses/ValidationErrorResponse'
+                5XX:
+                    $ref: '#/components/responses/ServerErrorResponse'
+        delete:
+            description: Мягкое удаление клиента
+            summary: Мягкое удаление клиента
+            operationId: clientDelete
+            tags: [clients]
+            parameters:
+                - $ref: '#/components/parameters/clientId'
+            responses:
+                204:
+                    description: Клиент мягко удален
+                404:
+                    $ref: '#/components/responses/EntityNotFoundErrorResponse'
+                422:
+                    $ref: '#/components/responses/ValidationErrorResponse'
+                5XX:
+                    $ref: '#/components/responses/ServerErrorResponse'
+
+components:
+    parameters:
+        clientId:
+            name: clientId
+            required: true
+            in: path
+            schema:
+                type: string
+        sortBy:
+            name: sortBy
+            required: false
+            description: Поле, по которому нужно отсортировать
+            in: query
+            schema:
+                type: string
+                default: createdAt
+        sortDir:
+            name: sortDir
+            required: false
+            description: Направление сортировки
+            in: query
+            schema:
+                type: string
+                enum:
+                    - asc
+                    - desc
+        page:
+            name: page
+            required: false
+            description: Номер запрашиваемой страницы
+            in: query
+            schema:
+                type: integer
+                default: 1
+        limit:
+            name: limit
+            required: false
+            description: Количество сущнойстей на странице
+            in: query
+            schema:
+                type: integer
+                default: 10
+                minimum: 5
+                maximum: 100
+        search:
+            name: search
+            required: false
+            description: Строка для поиска по текстовым полям модели по ilike %search%
+            in: query
+            schema:
+                type: string
+                example: Ива
+
+
+
+    responses:
+        Created:
+            description: Created
+            content:
+                application/json:
+                    schema:
+                        description: Идентификатор созданной модели
+                        type: string
+                        format: uuid
+
+        ServerErrorResponse:
+            description: Серверная Ошибка
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ServerError'
+
+        ValidationErrorResponse:
+            description: Ошибка валидации
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ValidationError'
+
+        EntityNotFoundErrorResponse:
+            description: Cущность не найдена
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/EntityNotFoundError'
+
+        ClientPaginationResponse:
+            description: Листинг клиентов
+            content:
+                application/json:
+                    schema:
+                        allOf:
+                            - $ref: '#/components/schemas/PaginationResponseBody'
+                            - title: ClientPaginationResponseBody
+                              properties:
+                                  data:
+                                      $ref: '#/components/schemas/Client'
+
+
+    schemas:
+
+        PaginationResponseBody:
+            description: Базовая пагинация
+            properties:
+                limit:
+                    type: integer
+                    description: Количество элементов на одной странице
+                page:
+                    type: integer
+                    description: Текущая страница
+                total:
+                    type: integer
+                    description: Общее количество элементов без пагинации
+                data:
+                    type: array
+                    description: Фрагмент коллекции по выбранным условиям выборки
+
+        Error:
+            type: object
+            properties:
+                status:
+                    description: Статус ошибки
+                    type: integer
+                    nullable: false
+                    minimum: 400
+                    maximum: 599
+                    exclusiveMaximum: false
+                    exclusiveMinimum: false
+                code:
+                    description: Код ошибки
+                    type: string
+                    nullable: false
+
+        ServerError:
+            allOf:
+                - $ref: '#/components/schemas/Error'
+                - type: object
+                  properties:
+                      status:
+                          minimum: 500
+                          maximum: 599
+                          exclusiveMaximum: false
+                          exclusiveMinimum: false
+                          example: 500
+                      code:
+                          example: 'INTERNAL_SERVER_ERROR'
+
+        ValidationError:
+            allOf:
+                - $ref: '#/components/schemas/Error'
+                - type: object
+                  properties:
+                      status:
+                          minimum: 422
+                          maximum: 422
+                          exclusiveMinimum: false
+                          exclusiveMaximum: false
+                      code:
+                          enum:
+                              - 'VALIDATION_EXCEPTION'
+                      exceptions:
+                          type: array
+                          nullable: false
+                          items:
+                              $ref: '#/components/schemas/ValidationExceptions'
+
+        ValidationExceptions:
+            type: object
+            properties:
+                field:
+                    type: string
+                    description: Поле, которое не соответствует правилу валидации
+                    example: communications.0.type
+                rule:
+                    type: string
+                    description: Правило валдиации, которое нарушили
+                    example: isEnum
+                message:
+                    type: string
+                    description: Текстовое описание ошибки
+                    example: type must be a enum
+
+        EntityNotFoundError:
+            allOf:
+                - $ref: '#/components/schemas/Error'
+                - type: object
+                  properties:
+                      code:
+                          enum:
+                              - 'ENTITY_NOT_FOUND'
+                      status:
+                          minimum: 404
+                          maximum: 404
+                          exclusiveMinimum: false
+                          exclusiveMaximum: false
+
+        ClientWithSpouse:
+            allOf:
+                - description: Клиент с супругой
+                  properties:
+                      spouse:
+                          allOf:
+                              - $ref: '#/components/schemas/Client'
+                              - nullable: true
+                                title: Client
+
+
+        Client:
+            description: Клиент
+            type: object
+            properties:
+                id:
+                    description: Идентификатор
+                    type: string
+                    format: uuid
+                    readOnly: true
+                    nullable: false
+                    example: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+                name:
+                    description: Имя
+                    type: string
+                    nullable: true
+                    example: Иван
+                surname:
+                    description: Фамилия
+                    type: string
+                    nullable: true
+                    example: Иванов
+                patronymic:
+                    description: Отчество
+                    type: string
+                    nullable: true
+                    example: Иванович
+                dob:
+                    description: День рождения
+                    type: string
+                    format: date
+                    example: 2022-07-10
+                сhildren:
+                    description: Дети
+                    type: array
+                    nullable: false
+                    default: []
+                    items:
+                        allOf:
+                            - $ref: '#/components/schemas/Child'
+                            - description: Ребенок клиента
+                              nullable: false
+                              title: Child
+                documentIds:
+                    description: Идентификаторы документов
+                    type: array
+                    nullable: false
+                    default: []
+                    items:
+                        nullable: false
+                        type: string
+                        format: uuid
+                        example: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+                passport:
+                    allOf:
+                        - $ref: '#/components/schemas/Passport'
+                        - description: Паспорт
+                          nullable: true
+                          title: Passport
+                livingAddress:
+                    allOf:
+                        - $ref: '#/components/schemas/Address'
+                        - description: Адрес проживания
+                          nullable: true
+                          title: Address
+                regAddress:
+                    allOf:
+                        - $ref: '#/components/schemas/Address'
+                        - description: Адрес регистрации
+                          nullable: true
+                          title: 'Address'
+                jobs:
+                    type: array
+                    nullable: false
+                    default: []
+                    items:
+                        allOf:
+                            - $ref: '#/components/schemas/Job'
+                            - nullable: false
+                              title: Job
+                curWorkExp:
+                    description: На текущем месте работы стаж
+                    type: number
+                    readOnly: true
+                    nullable: true
+                typeEducation:
+                    description: |
+                        Тип образования:
+                        * `secondary` - Среднее
+                        * `secondarySpecial` - Среднее специальное
+                        * `incompleteHigher` - Незаконченное высшее
+                        * `higher` - Высшее
+                        * `twoOrMoreHigher` - Два и более высших образований 
+                        * `academicDegree` - Академическая степень
+                    type: string
+                    enum:
+                        - secondary
+                        - secondarySpecial
+                        - incompleteHigher
+                        - higher
+                        - twoOrMoreHigher
+                        - academicDegree
+                monIncome:
+                    description: Суммарный доход в месяц c `масштабом(scale) = 2`
+                    type: number
+                    nullable: true
+                    example: 55.55
+                    multipleOf: 0.01
+                monExpenses:
+                    description: Суммарный расход в месяц c `масштабом(scale) = 2`
+                    type: number
+                    nullable: true
+                    example: 55.55
+                    multipleOf: 0.01
+                communications:
+                    type: array
+                    nullable: false
+                    default: [ ]
+                    items:
+                        allOf:
+                            - $ref: '#/components/schemas/Communication'
+                            - nullable: false
+                              title: Communication
+                createdAt:
+                    description: Дата создания
+                    type: string
+                    format: date-time
+                    readOnly: true
+                    nullable: false
+                    example: 2000-01-23T04:56:07.000+00:00
+                updatedAt:
+                    description: Дата обновления
+                    format: date-time
+                    type: string
+                    readOnly: true
+                    nullable: false
+                    example: 2000-01-23T04:56:07.000+00:00
+
+        Child:
+            description: Ребенок
+            properties:
+                id:
+                    description: Идентификатор
+                    type: string
+                    format: uuid
+                    readOnly: true
+                    nullable: false
+                    example: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+                name:
+                    description: имя
+                    example: Вася
+                    type: string
+                    nullable: true
+                surname:
+                    description: Фамилия
+                    type: string
+                    nullable: true
+                    example: Пупкин
+                patronymic:
+                    description: Отчество
+                    type: string
+                    nullable: true
+                    example: Михайлович
+                dob:
+                    description: День рождения
+                    format: date
+                    type: string
+                    nullable: true
+                    example: 2022-07-10
+
+        Passport:
+            description: Паспорт
+            properties:
+                id:
+                    description: Идентификатор
+                    type: string
+                    format: uuid
+                    readOnly: true
+                    nullable: false
+                    example: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+                series:
+                    description: Серия
+                    type: string
+                    nullable: false
+                    example: 7474
+                number:
+                    description: Номер
+                    type: string
+                    nullable: false
+                    example: 121121
+                giver:
+                    description: Кем выдан
+                    type: string
+                    nullable: false
+                    example: ОУФМ Челябинской обл. по Центральному р-ну гор.Челябинска
+                dateIssued:
+                    description: Дата выдачи
+                    format: date
+                    type: string
+                    nullable: false
+                    example: 2022-07-10
+                createdAt:
+                    description: Дата создания
+                    type: string
+                    format: date-time
+                    readOnly: true
+                    nullable: false
+                    example: 2000-01-23T04:56:07.000+00:00
+                updatedAt:
+                    description: Дата обновления
+                    format: date-time
+                    type: string
+                    readOnly: true
+                    nullable: false
+                    example: 2000-01-23T04:56:07.000+00:00
+
+        Job:
+            description: Работа
+            properties:
+                id:
+                    description: Идентификатор
+                    type: string
+                    format: uuid
+                    readOnly: true
+                    nullable: false
+                    example: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+                type:
+                    type: string
+                    description: |
+                        Тип работы:
+                        * `main` - Основная работа
+                        * `part-time` - Частичная занятость
+                    enum:
+                        - main
+                        - part-time
+                    nullable: true
+                    example: main
+                dateEmp:
+                    description: Дата трудоустройства
+                    type: string
+                    format: date
+                    nullable: true
+                dateDismissal:
+                    description: Дата увольнения
+                    type: string
+                    format: date
+                    nullable: true
+                monIncome:
+                    description: Доход в месяц c `масштабом(scale) = 2`
+                    type: number
+                    nullable: true
+                    example: 55.55
+                    multipleOf: 0.01
+                tin:
+                    description: ИНН
+                    type: string
+                    nullable: true
+                    example: 165718275080
+                factAddress:
+                    allOf:
+                        - $ref: '#/components/schemas/Address'
+                        - type: object
+                          title: Address
+                          description: Фактический адрес
+                          nullable: true
+                jurAddress:
+                    allOf:
+                        - $ref: '#/components/schemas/Address'
+                        - type: object
+                          title: Address
+                          description: Юридический адрес
+                          nullable: true
+                phoneNumber:
+                    description: Номер телефона
+                    type: string
+                    nullable: true
+                    example: 79821048575
+                createdAt:
+                    description: Дата создания
+                    type: string
+                    format: date-time
+                    readOnly: true
+                    nullable: false
+                    example: 2000-01-23T04:56:07.000+00:00
+                updatedAt:
+                    description: Дата обновления
+                    format: date-time
+                    type: string
+                    readOnly: true
+                    nullable: false
+                    example: 2000-01-23T04:56:07.000+00:00
+
+        Communication:
+            description: Средство связи
+            properties:
+                id:
+                    description: Идентификатор
+                    type: string
+                    format: uuid
+                    readOnly: true
+                    nullable: false
+                    example: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+                type:
+                    description: |
+                        Тип:
+                        * `email` - Электронная почта
+                        * `phone` - Мобильный телефон
+                    type: string
+                    enum:
+                        - email
+                        - phone
+                    nullable: false
+                    example: phone
+                value:
+                    description: Значение средства связи
+                    type: string
+                    nullable: false
+                    example: 79821048575
+
+        Address:
+            description: Адрес
+            properties:
+                id:
+                    description: Идентификатор
+                    type: string
+                    format: uuid
+                    readOnly: true
+                    nullable: false
+                    example: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+                zipCode:
+                    description: Почтовый индекс
+                    type: string
+                    nullable: true
+                    example: 444005
+                country:
+                    description: Страна
+                    type: string
+                    nullable: true
+                    example: Россия
+                region:
+                    description:  Регион, область
+                    type: string
+                    nullable: true
+                    example: Саратовская область
+                city:
+                    description: Город
+                    type: string
+                    nullable: true
+                    example: Саратов
+                street:
+                    description: Улица
+                    type: string
+                    nullable: true
+                    example: ул. Пушкина
+                house:
+                    description: Номер дома
+                    type: string
+                    nullable: true
+                    example: 12а
+                apartment:
+                    description: Номер квартиры, офиса и т.д.
+                    type: string
+                    nullable: true
+                    example: 101a
+                createdAt:
+                    description: Дата создания
+                    type: string
+                    format: date-time
+                    readOnly: true
+                    nullable: false
+                    example: 2000-01-23T04:56:07.000+00:00
+                updatedAt:
+                    description: Дата обновления
+                    format: date-time
+                    type: string
+                    readOnly: true
+                    nullable: false
+                    example: 2000-01-23T04:56:07.000+00:00
+
+
