@@ -56,7 +56,11 @@ paths:
                 - $ref: '#/components/parameters/clientId'
             responses:
                 200:
-                    $ref: '#/components/schemas/ClientWithSpouse'
+                    description: Клиент с супругой
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ClientWithSpouse'
                 404:
                     $ref: '#/components/responses/EntityNotFoundErrorResponse'
                 422:
@@ -294,6 +298,7 @@ components:
 
         ClientWithSpouse:
             allOf:
+                - $ref: '#/components/schemas/Client'
                 - description: Клиент с супругой
                   properties:
                       spouse:
