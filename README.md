@@ -53,6 +53,6 @@
 
 ### Рекомендуемы стек
 
-- Node > 14
+- Node > 12
 - AdonisJS | NestJS
 
