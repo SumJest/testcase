@@ -8,7 +8,7 @@ info:
         name: SurRealistik
         url: https://alt-point.com/
 servers:
-    - url: https://localhost:3000/
+    - url: https://localhost:8000
 paths:
     /clients/:
         get:
