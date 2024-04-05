@@ -8,7 +8,7 @@ from functools import partial, wraps
 from typing import Any, Callable, Tuple, Type
 
 from asgiref.sync import sync_to_async
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from ninja.constants import NOT_SET
 from ninja.pagination import LimitOffsetPagination, PaginationBase, make_response_paginated
 from ninja.types import DictStrAny
@@ -112,6 +112,16 @@ class PaginationWithOrdering(LimitOffsetPagination):
         sort_by = ('-' if pagination.sortDir == SortDirs.desc else '') + pagination.sortBy
         print(sort_by)
         queryset = queryset.order_by(sort_by)
+        search_str = pagination.search
+        # searching
+        queryset = queryset.filter(
+            Q(name__contains=search_str) |
+            Q(surname__contains=search_str) |
+            Q(patronymic__contains=search_str) |
+            Q(typeEducation__contains=search_str) |
+            Q(livingAddress__city__contains=search_str) |
+            Q(livingAddress__city__contains=search_str)
+        )
 
         limit = pagination.limit
         page = pagination.page
