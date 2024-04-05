@@ -110,7 +110,6 @@ class PaginationWithOrdering(LimitOffsetPagination):
 
     async def paginate_queryset(self, queryset: QuerySet, pagination: Input, **params):
         sort_by = ('-' if pagination.sortDir == SortDirs.desc else '') + pagination.sortBy
-        print(sort_by)
         queryset = queryset.order_by(sort_by)
         search_str = pagination.search
         # searching

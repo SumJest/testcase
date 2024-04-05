@@ -128,8 +128,6 @@ class ClientsService:
                 continue
 
             if getattr(sub_model, key, None) != value:
-                print(f"Trying to update {sub_model._meta.db_table}[\'{key}\'] to {value}", end=' ')
-                print(f"From {getattr(sub_model, key)}")
                 setattr(sub_model, key, value)
 
                 updated = True
@@ -149,7 +147,6 @@ class ClientsService:
         for model in list_of_models:
             model_dump = model.model_dump(exclude_unset=True, exclude_none=True)
             if model.id is None:
-                print(f'Creating {type(model_class)} у {client.id}')
                 creation_func(model_dump, client)
                 updated = True
                 continue
@@ -180,7 +177,6 @@ class ClientsService:
             client = Client.objects.get(pk=clientId)
         except Client.DoesNotExist as exc:
             raise Http404(str(exc))
-        print(f"UPDATING CLIENT: {client.id}")
         if new_client is None:
             client.delete()
             return
