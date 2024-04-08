@@ -114,12 +114,12 @@ class PaginationWithOrdering(LimitOffsetPagination):
         search_str = pagination.search
         # searching
         queryset = queryset.filter(
-            Q(name__contains=search_str) |
-            Q(surname__contains=search_str) |
-            Q(patronymic__contains=search_str) |
-            Q(typeEducation__contains=search_str) |
-            Q(livingAddress__city__contains=search_str) |
-            Q(livingAddress__city__contains=search_str)
+            Q(name__icontains=search_str) |
+            Q(surname__icontains=search_str) |
+            Q(patronymic__icontains=search_str) |
+            Q(typeEducation__icontains=search_str) |
+            Q(livingAddress__city__icontains=search_str) |
+            Q(livingAddress__city__icontains=search_str)
         )
 
         limit = pagination.limit
