@@ -22,6 +22,7 @@ def validation_error(request, exc: ValidationError):
                                                           rule=error['type'],
                                                           message=error['msg']))
     error_model = ValidationErrorSchema(exceptions=validation_exceptions, status=422, code="VALIDATION_EXCEPTION")
+    print(traceback.format_exc())
     return api.create_response(request, error_model.model_dump(), status=422)
 
 
@@ -34,4 +35,5 @@ def not_found_error(request, exc: Http404):
 @api.exception_handler(Exception)
 def iternal_error(request, exc: Exception):
     error_model = ExceptionSchema(status=500, code="INTERNAL_SERVER_ERROR")
+    print(traceback.format_exc())
     return api.create_response(request, error_model.model_dump(), status=500)

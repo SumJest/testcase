@@ -162,7 +162,7 @@ class PatchPassport(ninja.ModelSchema):
         fields_optional = "__all__"
 
 
-class PatchWithoutClientSchema(ninja.ModelSchema):
+class PatchWithoutSpouseSchema(ninja.ModelSchema):
     passport: Optional[PatchPassport] = None
     livingAddress: Optional[PatchAddress] = None
     regAddress: Optional[PatchAddress] = None
@@ -176,5 +176,5 @@ class PatchWithoutClientSchema(ninja.ModelSchema):
         fields_optional = "__all__"
 
 
-class PatchClientSchema(PatchWithoutClientSchema):
-    spouse: Optional[PatchWithoutClientSchema] = None
+class PatchClientSchema(PatchWithoutSpouseSchema):
+    spouse: Optional[PatchWithoutSpouseSchema] = None

@@ -1,11 +1,17 @@
+import json
 from enum import Enum
+
+from django.core.exceptions import FieldError
 from ninja import Schema
+from ninja.errors import ValidationError
+from ninja.schema import DjangoGetter
+from pydantic import ConfigDict, Field, model_validator
 
 from api.schemas import PaginationResponseBody
 
 import inspect
 from functools import partial, wraps
-from typing import Any, Callable, Tuple, Type
+from typing import Any, Callable, Tuple, Type, Union
 
 from asgiref.sync import sync_to_async
 from django.db.models import QuerySet, Q
@@ -16,10 +22,10 @@ from ninja.types import DictStrAny
 
 class AsyncLimitOffsetPagination(LimitOffsetPagination):
     async def paginate_queryset(
-        self,
-        queryset: QuerySet,
-        pagination: LimitOffsetPagination.Input,
-        **params: DictStrAny,
+            self,
+            queryset: QuerySet,
+            pagination: LimitOffsetPagination.Input,
+            **params: DictStrAny,
     ):
         offset = pagination.offset
         limit: int = pagination.limit
@@ -27,7 +33,7 @@ class AsyncLimitOffsetPagination(LimitOffsetPagination):
         @sync_to_async
         def process_query_set():
             return {
-                "items": queryset[offset : offset + limit] if queryset else [],
+                "items": queryset[offset: offset + limit] if queryset else [],
                 "count": self._items_count(queryset) if queryset else 0,
             }
 
@@ -35,7 +41,6 @@ class AsyncLimitOffsetPagination(LimitOffsetPagination):
 
 
 def apaginate(func_or_pgn_class: Any = NOT_SET, **paginator_params: DictStrAny) -> Callable:
-
     isfunction = inspect.isfunction(func_or_pgn_class)
     isnotset = func_or_pgn_class == NOT_SET
 
@@ -54,9 +59,9 @@ def apaginate(func_or_pgn_class: Any = NOT_SET, **paginator_params: DictStrAny) 
 
 
 def _inject_pagination(
-    func: Callable,
-    paginator_class: Type[PaginationBase],
-    **paginator_params: Any,
+        func: Callable,
+        paginator_class: Type[PaginationBase],
+        **paginator_params: Any,
 ) -> Callable:
     paginator: PaginationBase = paginator_class(**paginator_params)
 
@@ -65,7 +70,6 @@ def _inject_pagination(
         pagination_params = kwargs.pop("ninja_pagination")
         if paginator.pass_parameter:
             kwargs[paginator.pass_parameter] = pagination_params
-
         items = await func(*args, **kwargs)
 
         result = await paginator.paginate_queryset(items, pagination=pagination_params, **kwargs)
@@ -86,9 +90,10 @@ def _inject_pagination(
         view_with_pagination._ninja_contribute_to_operation = [partial(  # type: ignore
             make_response_paginated,
             paginator,
-        ),]
+        ), ]
 
     return view_with_pagination
+
 
 class SortDirs(Enum):
     asc = "asc"
@@ -97,11 +102,37 @@ class SortDirs(Enum):
 
 class PaginationWithOrdering(LimitOffsetPagination):
     class Input(Schema):
-        sortBy: str = "createdAt"
-        sortDir: SortDirs = SortDirs.asc
-        limit: int = 10
-        page: int = 1
-        search: str
+        # sortBy: str = Field(default="createdAt")
+        # sortDir: SortDirs = Field(default=SortDirs.asc)
+        sortBy: list[str] = Field(default="createdAt")
+        limit: int = Field(default=10, ge=1)
+        page: int = Field(default=1, ge=1)
+        search: str = Field(default='')
+        filters: str | dict[str, Union[str, int]] = Field(default={})
+
+        @model_validator(mode='after')
+        def validate_filters(self) -> 'Input':
+            new_filters = {}
+            if self.filters:
+                try:
+                    for field in self.filters.split(','):
+                        key, value = field.strip().split('=')
+                        print(field)
+                        new_filters[key] = int(value) if value.isdigit() else value
+                        print(new_filters)
+                except:
+                    raise ValidationError(errors=[{'loc': ['query.filters'],
+                                                   'type': 'query_list',
+                                                   'msg': 'Input should be a valid query list'}])
+            self.filters = new_filters
+            return self
+        @model_validator(mode='after')
+        def validate_sort_by(self) -> 'Input':
+            new_sortby_list = []
+            for sortBy in self.sortBy:
+                new_sortby_list += sortBy.split(',')
+            self.sortBy = list(map(str.strip, new_sortby_list))
+            return self
 
     class Output(PaginationResponseBody):
         pass
@@ -109,9 +140,9 @@ class PaginationWithOrdering(LimitOffsetPagination):
     items_attribute = "data"
 
     async def paginate_queryset(self, queryset: QuerySet, pagination: Input, **params):
-        sort_by = ('-' if pagination.sortDir == SortDirs.desc else '') + pagination.sortBy
-        queryset = queryset.order_by(sort_by)
+        queryset = queryset.order_by(*pagination.sortBy)
         search_str = pagination.search
+        print(pagination.filters)
         # searching
         queryset = queryset.filter(
             Q(name__icontains=search_str) |
@@ -119,15 +150,28 @@ class PaginationWithOrdering(LimitOffsetPagination):
             Q(patronymic__icontains=search_str) |
             Q(typeEducation__icontains=search_str) |
             Q(livingAddress__city__icontains=search_str) |
-            Q(livingAddress__city__icontains=search_str)
+            Q(regAddress__city__icontains=search_str) |
+            Q(child__name__icontains=search_str) # По такому принципу можно искать в каждом поле в каждой модели,
+            # но я не буду указывать все, т.к. их слишком много. Это только для демонстрации поиска по вложенным моделям
         )
-
+        # filtering
+        try:
+            filter_query = Q()
+            for key, value in pagination.filters.items():
+                filter_query = filter_query & Q(**{key: value})
+            queryset = queryset.filter(filter_query)
+        except FieldError as exc:
+            raise ValidationError([{
+                'loc': ['query.filters'],
+                'type': 'filter',
+                'msg': 'Incorrect field(s)'
+            }])
         limit = pagination.limit
         page = pagination.page
 
         @sync_to_async
         def process_query_set():
             return {"limit": limit, "page": page, "total": self._items_count(queryset) if queryset else 0,
-                    "data": queryset[(page-1) * limit: (page-1) * limit + limit]}
+                    "data": queryset[(page - 1) * limit: (page - 1) * limit + limit]}
 
         return await process_query_set()

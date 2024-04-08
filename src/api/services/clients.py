@@ -2,13 +2,13 @@ import datetime
 from typing import List, Callable
 from uuid import UUID
 
-from django.db.models import QuerySet, Model, Prefetch, prefetch_related_objects
+from django.db.models import QuerySet, Model, Prefetch, prefetch_related_objects, Count
 from django.http import Http404
 from pydantic import BaseModel
 
 from api.models import Client, Address, Passport, Job, Child, Communication
 from api.schemas import InClientSchema, InAddress, InPassport, InJob, InChild, InCommunication, PatchClientSchema, \
-    PatchWithoutClientSchema, PatchJob, PatchChild
+    PatchWithoutSpouseSchema, PatchJob, PatchChild
 
 from asgiref.sync import sync_to_async
 
@@ -88,12 +88,14 @@ class ClientsService:
         return str((self.__create_client(payload)).id)
 
     def resolve_clients_query_set(self) -> QuerySet:
-        return (Client.objects.select_related('passport', 'livingAddress', 'regAddress', 'spouse',
+        return ((Client.objects.select_related('passport', 'livingAddress', 'regAddress', 'spouse',
                                               'spouse__livingAddress', 'spouse__passport', 'spouse__regAddress')
                 .prefetch_related('communication_set', 'job_set', 'spouse__communication_set', 'child_set',
                                   'spouse__child_set', 'spouse__job_set',)
                 .prefetch_related('job_set__jurAddress', 'job_set__factAddress',
                                   'spouse__job_set__factAddress', 'spouse__job_set__jurAddress'))
+                .annotate(children_count=Count('child')))
+
 
     @sync_to_async
     def get_client(self, clientId: UUID):
@@ -141,7 +143,6 @@ class ClientsService:
             return
         existing_ids = set(model_class.objects.values_list('id', flat=True).filter(client=client).all())
         available_ids = {obj.id for obj in list_of_models}
-
         model_class.objects.filter(pk__in=existing_ids - available_ids).delete()
         updated = False
         for model in list_of_models:
@@ -158,21 +159,8 @@ class ClientsService:
         if updated:
             client.save()
 
-    def update_children(self, client: Client, children: List[PatchChild] | None):
-        if children is None:
-            return
-        updated = False
-        for child in children:
-            model_dump = child.model_dump(exclude_unset=True, exclude_none=True)
-            if child.id is None:
-                self.create_child(model_dump, client)
-                updated = True
-                continue
-            updated = updated or self.update_submodel(Job.objects.get(child.id), model_dump)
-        if updated:
-            client.save()
-
-    def __update_client(self, clientId: UUID, new_client: PatchWithoutClientSchema) -> None:
+    def __update_client(self, clientId: UUID, new_client: PatchWithoutSpouseSchema) -> None:
+        print(new_client.children)
         try:
             client = Client.objects.get(pk=clientId)
         except Client.DoesNotExist as exc:
@@ -224,10 +212,11 @@ class ClientsService:
         # jobs
         self.update_model_list(client, new_client.jobs, Job, self.create_job)
         # children
+
         self.update_model_list(client, new_client.children, Child, self.create_child)
         # communications
         self.update_model_list(client, new_client.communications, Communication, self.create_communication)
 
     @sync_to_async
-    def update_client(self, clientId: UUID, new_client: PatchWithoutClientSchema) -> None:
+    def update_client(self, clientId: UUID, new_client: PatchWithoutSpouseSchema) -> None:
         self.__update_client(clientId, new_client)

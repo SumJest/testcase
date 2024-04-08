@@ -16,14 +16,18 @@ clients_service = ClientsService()
 async def create_client(request, payload: InClientSchema):
     return await clients_service.create_client(payload)
 
+
 @router.get('clients/{clientId}/', response={200: OutClientSchema})
 async def get_client(request, clientId: UUID):
     return await clients_service.get_client(clientId)
+
 
 @router.get('clients/', response={200: List[OutClientSchema]})
 @apaginate(PaginationWithOrdering)
 async def list_clients(request):
     return await clients_service.get_clients()
+
+
 #
 #
 @router.delete("clients/{clientId}/", response={204: None})
