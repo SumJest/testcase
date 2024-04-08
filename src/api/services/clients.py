@@ -169,7 +169,6 @@ class ClientsService:
         return updated
 
     def __update_client(self, clientId: UUID, new_client: PatchWithoutSpouseSchema) -> None:
-        print(new_client.children)
         try:
             client = Client.objects.get(pk=clientId)
         except Client.DoesNotExist as exc:

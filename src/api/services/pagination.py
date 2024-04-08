@@ -142,7 +142,6 @@ class PaginationWithOrdering(LimitOffsetPagination):
     async def paginate_queryset(self, queryset: QuerySet, pagination: Input, **params):
         queryset = queryset.order_by(*pagination.sortBy)
         search_str = pagination.search
-        print(pagination.filters)
         # searching
         queryset = queryset.filter(
             Q(name__icontains=search_str) |
