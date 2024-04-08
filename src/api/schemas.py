@@ -1,9 +1,16 @@
+from enum import Enum
 from typing import Optional
 from uuid import UUID
 
 import ninja
 
 from api.models import Client, Job, Communication, Child, Address, Passport
+
+
+class ClientAction(str, Enum):
+    CREATED = "CREATED"
+    UPDATED = "UPDATED"
+    DELETED = "DELETED"
 
 
 class InAddress(ninja.ModelSchema):
