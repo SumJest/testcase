@@ -20,6 +20,12 @@ class DatabaseSettings(BaseSettings, env_prefix='database_'):
     user_password: Optional[str] = Field(default=None)
 
 
+class RedisSettings(BaseSettings, env_prefix='redis_'):
+    host: str = Field(default='localhost')
+    port: int = Field(default=6379)
+
+
 class AppSettings(BaseSettings):
     django: DjangoSettings = DjangoSettings()
     database: DatabaseSettings = DatabaseSettings()
+    redis: RedisSettings = RedisSettings()

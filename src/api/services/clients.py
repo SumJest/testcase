@@ -8,9 +8,10 @@ from pydantic import BaseModel
 
 from api.models import Client, Address, Passport, Job, Child, Communication
 from api.schemas import InClientSchema, InAddress, InPassport, InJob, InChild, InCommunication, PatchClientSchema, \
-    PatchWithoutSpouseSchema, PatchJob, PatchChild
+    PatchWithoutSpouseSchema, PatchJob, PatchChild, ClientAction
 
 from asgiref.sync import sync_to_async
+from api.tasks import log_client_action
 
 
 class ClientsService:
@@ -69,7 +70,7 @@ class ClientsService:
         children = payload_dict.pop("children")
         communications = payload_dict.pop("communications")
         jobs = payload_dict.pop("jobs")
-        print(payload_dict)
+
         client = Client.objects.create(**payload_dict)
 
         for communication in communications:
@@ -80,6 +81,9 @@ class ClientsService:
 
         for job in jobs:
             self.create_job(job, client)
+
+        log_client_action.apply_async(kwargs={"fio": f"{client.name} {client.surname} {client.patronymic}",
+                                            "action": ClientAction.CREATED})
 
         return client
 
@@ -108,9 +112,13 @@ class ClientsService:
     def get_clients(self):
         return self.resolve_clients_query_set().all()
 
-    async def delete_client(self, clientId: UUID) -> None:
+    @sync_to_async
+    def delete_client(self, clientId: UUID) -> None:
         try:
-            await Client.objects.filter(pk=clientId).adelete()
+            client = Client.objects.get(pk=clientId)
+            client.delete()
+            log_client_action.apply_async(kwargs={"fio": f"{client.name} {client.surname} {client.patronymic}",
+                                                "action": ClientAction.DELETED})
         except Client.DoesNotExist as exc:
             raise Http404(str(exc))
 
@@ -158,6 +166,7 @@ class ClientsService:
             updated = updated or self.update_submodel(updating_model, model_dump)
         if updated:
             client.save()
+        return updated
 
     def __update_client(self, clientId: UUID, new_client: PatchWithoutSpouseSchema) -> None:
         print(new_client.children)
@@ -210,12 +219,27 @@ class ClientsService:
                     client.save()
 
         # jobs
-        self.update_model_list(client, new_client.jobs, Job, self.create_job)
+        updated = updated or self.update_model_list(client,
+                                                    new_client.jobs,
+                                                    Job,
+                                                    self.create_job)
         # children
 
-        self.update_model_list(client, new_client.children, Child, self.create_child)
+        updated = updated or self.update_model_list(client,
+                                                    new_client.children,
+                                                    Child,
+                                                    self.create_child)
         # communications
-        self.update_model_list(client, new_client.communications, Communication, self.create_communication)
+        updated = updated or self.update_model_list(client,
+                                                    new_client.communications,
+                                                    Communication,
+                                                    self.create_communication)
+
+        if updated:
+            log_client_action.apply_async(kwargs={"fio": f"{client.name} {client.surname} {client.patronymic}",
+                                                "action": ClientAction.UPDATED})
+
+
 
     @sync_to_async
     def update_client(self, clientId: UUID, new_client: PatchWithoutSpouseSchema) -> None:

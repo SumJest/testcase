@@ -14,6 +14,7 @@ clients_service = ClientsService()
 
 @router.post('clients/', response={201: str})
 async def create_client(request, payload: InClientSchema):
+
     return await clients_service.create_client(payload)
 
 

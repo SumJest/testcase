@@ -5,15 +5,25 @@ services:
     environment:
       POSTGRES_DB: "postgres"
       POSTGRES_USER: "testcase"
-      POSTGRES_PASSWORD: "QtSItP3oCgWSLWt81o2r"
+      POSTGRES_PASSWORD: "INSECURE"
     volumes:
        - postgres:/data/postgres
     ports:
       - "5432:5432"
     container_name: testcase_pgdb
     restart: always
-  syncshare-accounts:
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PORT=6379
+      - REDIS_DATABASES=1
+    container_name: testcase_redis
+  testcase-backend:
     build: /
+    restart: always
     environment:
       # ==== Django settings ====
       DJANGO_DEBUG: "false"
@@ -21,15 +31,19 @@ services:
       DJANGO_ALLOWED_HOSTS: '["127.0.0.1", "localhost"]'
       # ==== Database settings ====
       DATABASE_ENGINE: "postgres"
-      DATABASE_HOST: "localhost.com"
+      DATABASE_HOST: "testcase_redis"
       DATABASE_NAME: "testcase"
       DATABASE_USER: "testcase"
       DATABASE_USER_PASSWORD: "INSECURE"
       DATABASE_PORT: 5432
+      # ==== Redis settings ====
+      REDIS_HOST: "testcase_redis"
+      REDIS_PORT: 6379
     ports:
       - "8002:8002"
     depends_on:
       - postgres
+      - redis
 
 
 volumes:
